@@ -191,7 +191,7 @@ technologies like these are used for good and not personal gain.
 
 - Funchal, G. (2011, April 14). Most efficient way to escape XML/HTML
   in C++ string?. Stack Overflow.
-  <a href="<<https://stackoverflow.com/a/5665377>>" class="uri">https://stackoverflow.com/a/5665377</a>
+  <a href="https://stackoverflow.com/a/5665377" class="uri">https://stackoverflow.com/a/5665377</a>
 
 - Levine, John R.; Mason, Tony; Brown, Doug (1992). lex & yacc (2nd
   ed.). O’Reilly. p. 279. ISBN 1-56592-000-7. A freely available
