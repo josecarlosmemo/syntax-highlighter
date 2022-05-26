@@ -5,6 +5,11 @@
 #include <string>
 #include <chrono>
 #include <filesystem>
+#include <thread>
+#include <vector>
+#include <algorithm>
+
+#define NUM_THREADS 3
 
 using namespace std;
 
@@ -157,6 +162,25 @@ void outputFile(const char *fileName)
     // return 0;
 }
 
+vector<vector<string>> divideEvenly(vector<string> lst, size_t n)
+{
+    vector<vector<string>> results;
+    size_t chunk_size = lst.size() / n;
+    size_t remainder = lst.size() % n;
+
+    size_t begin = 0;
+    size_t end = 0;
+
+    for (size_t i = 0; i < min(n, lst.size()); i++)
+    {
+        end += (remainder > 0) ? (chunk_size + !!(remainder--)) : chunk_size;
+        results.push_back(vector<string>(lst.begin() + begin, lst.begin() + end));
+        begin = end;
+    }
+
+    return results;
+}
+
 bool validateFile(const char *fileName)
 {
 
@@ -175,6 +199,8 @@ bool validateFile(const char *fileName)
 
 int main(int argc, char const *argv[])
 {
+    argv[1] = "examples/";
+    argc = 2;
     auto start = std::chrono::high_resolution_clock::now();
 
     // Revisamos input como argumento de main si no se ingresa, se marca el error y terminamos ejecución.
@@ -199,8 +225,24 @@ int main(int argc, char const *argv[])
         }
         else
         {
+            vector<string> files;
+
             for (const auto &entry : filesystem::directory_iterator(argv[0]))
-                outputFile(entry.path().c_str());
+            {
+                if (validateFile(entry.path().c_str()))
+                {
+                    files.push_back(entry.path().string());
+                }
+                else
+                {
+                    cout << "Could not open file: " << entry.path() << endl;
+                }
+            }
+
+            for (auto chunk : divideEvenly(files, NUM_THREADS))
+            {
+                cout << chunk[0] << endl;
+            }
         }
     }
     else
