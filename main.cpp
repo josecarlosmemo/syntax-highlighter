@@ -4,6 +4,7 @@
 #include <fstream>
 #include <string>
 #include <chrono>
+#include <filesystem>
 
 using namespace std;
 
@@ -41,36 +42,19 @@ void encode(std::string &data)
     data.swap(buffer);
 }
 
-int main(int argc, char const *argv[])
+void outputFile(const char *fileName)
 {
-
     yyFlexLexer *lexer;
-    string fileName;
     ifstream *input;
     ofstream output;
     ColorScheme scheme = Dracula;
+    input = new ifstream(fileName);
 
     // Iniciamos con el reloj
     auto start = std::chrono::high_resolution_clock::now();
 
-    // Revisamos input como argumento de main si no se ingresa, se marca el error y terminamos ejecución.
-
-    ++argv, --argc;
-    if (argc > 0)
-    {
-
-        input = new ifstream(argv[0]);
-        fileName = argv[0];
-    }
-    else
-    {
-        cout << "Missing File Argument" << endl
-             << "Terminating..." << endl;
-        return 1;
-    }
-
     // Creamos el archivo al cual escribir
-    output.open(strcat((char *)argv[0], ".html"));
+    output.open(strcat((char *)fileName, ".html"));
     // Inicializamos Lexer
     lexer = new yyFlexLexer(input);
 
@@ -170,5 +154,67 @@ int main(int argc, char const *argv[])
     cout << "Done!" << endl
          << "Finished in " << duration.count() << " milliseconds." << endl;
 
-    return 0;
+    // return 0;
+}
+
+bool validateFile(const char *fileName)
+{
+
+    if (FILE *file = fopen(fileName, "r"))
+    {
+        fclose(file);
+
+        return true;
+    }
+    else
+    {
+
+        return false;
+    }
+}
+
+int main(int argc, char const *argv[])
+{
+    auto start = std::chrono::high_resolution_clock::now();
+
+    // Revisamos input como argumento de main si no se ingresa, se marca el error y terminamos ejecución.
+
+    ++argv, --argc;
+    if (argc > 0)
+    {
+
+        // Si no es una carpeta
+
+        if (!filesystem::is_directory(argv[0]))
+        {
+            if (!validateFile(argv[0]))
+            {
+
+                cout << "Unable to find file " << argv[0] << endl
+                     << "Terminating..." << endl;
+                return 1;
+            }
+
+            outputFile(argv[0]);
+        }
+        else
+        {
+            for (const auto &entry : filesystem::directory_iterator(argv[0]))
+                outputFile(entry.path().c_str());
+        }
+    }
+    else
+    {
+        cout << "Missing File Argument" << endl
+             << "Terminating..." << endl;
+        return 1;
+    }
+
+    auto stop = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+
+    cout << "Done!" << endl
+         << "Finished in " << duration.count() << " milliseconds." << endl;
+
+    //  std::string path = "/path/to/directory";
 }
