@@ -9,9 +9,10 @@
 #include <vector>
 #include <algorithm>
 
-#define NUM_THREADS 3
+#define NUM_THREADS 4
 
 using namespace std;
+namespace fs = std::filesystem;
 
 // Función que nos permite encodear caracteres especiales de HTML
 // Autor: Giovanni Funchal
@@ -47,19 +48,21 @@ void encode(std::string &data)
     data.swap(buffer);
 }
 
-void outputFile(const char *fileName)
+void outputFile(string fileName)
 {
     yyFlexLexer *lexer;
     ifstream *input;
     ofstream output;
     ColorScheme scheme = Dracula;
     input = new ifstream(fileName);
+    // const char *outputFileName = strcat((char *)fileName, ".html");
+    string outputFileName = fileName + ".html";
 
     // Iniciamos con el reloj
     auto start = std::chrono::high_resolution_clock::now();
 
     // Creamos el archivo al cual escribir
-    output.open(strcat((char *)fileName, ".html"));
+    output.open(outputFileName);
     // Inicializamos Lexer
     lexer = new yyFlexLexer(input);
 
@@ -156,7 +159,7 @@ void outputFile(const char *fileName)
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
 
-    cout << "Done!" << endl
+    cout << "File: " << fileName << " Done!" << endl
          << "Finished in " << duration.count() << " milliseconds." << endl;
 
     // return 0;
@@ -197,6 +200,18 @@ bool validateFile(const char *fileName)
     }
 }
 
+void outputChunk(vector<string> files)
+{
+    if (files.size() >= 1)
+    {
+
+        for (auto file : files)
+        {
+            outputFile(file);
+        }
+    }
+}
+
 int main(int argc, char const *argv[])
 {
     argv[1] = "examples/";
@@ -211,7 +226,7 @@ int main(int argc, char const *argv[])
 
         // Si no es una carpeta
 
-        if (!filesystem::is_directory(argv[0]))
+        if (!fs::is_directory(argv[0]))
         {
             if (!validateFile(argv[0]))
             {
@@ -226,8 +241,9 @@ int main(int argc, char const *argv[])
         else
         {
             vector<string> files;
+            vector<thread> threads;
 
-            for (const auto &entry : filesystem::directory_iterator(argv[0]))
+            for (const auto &entry : fs::directory_iterator(argv[0]))
             {
                 if (validateFile(entry.path().c_str()))
                 {
@@ -239,9 +255,21 @@ int main(int argc, char const *argv[])
                 }
             }
 
-            for (auto chunk : divideEvenly(files, NUM_THREADS))
+            vector<vector<string>> test = divideEvenly(files, NUM_THREADS);
+
+            for (int i = 0; i < NUM_THREADS; i++)
             {
-                cout << chunk[0] << endl;
+                threads.push_back(thread(outputChunk, ref(test[i])));
+            }
+
+            // for (auto chunk : test)
+            // {
+            //     threads.push_back(thread(outputChunk, chunk));
+            // }
+
+            for (auto &th : threads)
+            {
+                th.join();
             }
         }
     }
