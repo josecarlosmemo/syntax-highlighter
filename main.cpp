@@ -7,9 +7,8 @@
 #include <filesystem>
 #include <thread>
 #include <vector>
-#include <algorithm>
 
-#define NUM_THREADS 4
+#define NUM_THREADS 8
 
 using namespace std;
 namespace fs = std::filesystem;
@@ -48,18 +47,19 @@ void encode(std::string &data)
     data.swap(buffer);
 }
 
-void outputFile(string fileName)
+void outputFile(fs::path fileName)
 {
+    // Iniciamos con el reloj
+    auto start = std::chrono::high_resolution_clock::now();
     yyFlexLexer *lexer;
     ifstream *input;
     ofstream output;
     ColorScheme scheme = Dracula;
     input = new ifstream(fileName);
-    // const char *outputFileName = strcat((char *)fileName, ".html");
-    string outputFileName = fileName + ".html";
 
-    // Iniciamos con el reloj
-    auto start = std::chrono::high_resolution_clock::now();
+    fs::create_directories("output/" + fileName.parent_path().string());
+
+    string outputFileName = "output/" + fileName.string() + ".html";
 
     // Creamos el archivo al cual escribir
     output.open(outputFileName);
@@ -157,17 +157,15 @@ void outputFile(string fileName)
     // Paramos el reloj y terminamos el programa
 
     auto stop = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
 
-    cout << "File: " << fileName << " Done!" << endl
-         << "Finished in " << duration.count() << " milliseconds." << endl;
-
-    // return 0;
+    cout << "File: " << fileName << endl
+         << "Finished processing in " << duration.count() << " microseconds." << endl;
 }
 
-vector<vector<string>> divideEvenly(vector<string> lst, size_t n)
+vector<vector<fs::path>> divideEvenly(vector<fs::path> lst, size_t n)
 {
-    vector<vector<string>> results;
+    vector<vector<fs::path>> results;
     size_t chunk_size = lst.size() / n;
     size_t remainder = lst.size() % n;
 
@@ -177,7 +175,7 @@ vector<vector<string>> divideEvenly(vector<string> lst, size_t n)
     for (size_t i = 0; i < min(n, lst.size()); i++)
     {
         end += (remainder > 0) ? (chunk_size + !!(remainder--)) : chunk_size;
-        results.push_back(vector<string>(lst.begin() + begin, lst.begin() + end));
+        results.push_back(vector<fs::path>(lst.begin() + begin, lst.begin() + end));
         begin = end;
     }
 
@@ -200,16 +198,38 @@ bool validateFile(const char *fileName)
     }
 }
 
-void outputChunk(vector<string> files)
+void outputChunk(vector<fs::path> files)
 {
     if (files.size() >= 1)
     {
 
-        for (auto file : files)
+        for (fs::path file : files)
         {
             outputFile(file);
         }
     }
+}
+
+vector<fs::path> getListOfFiles(const fs::path &path)
+{
+    vector<fs::path> lst;
+    for (const auto &p : fs::recursive_directory_iterator(path))
+    {
+        if (!fs::is_directory(p))
+        {
+
+            if (validateFile(p.path().c_str()))
+            {
+                lst.push_back(p.path());
+            }
+            else
+            {
+                cout << endl
+                     << "Could not open file: " << p.path() << endl;
+            }
+        }
+    }
+    return lst;
 }
 
 int main(int argc, char const *argv[])
@@ -223,49 +243,38 @@ int main(int argc, char const *argv[])
     ++argv, --argc;
     if (argc > 0)
     {
+        cout << "Processing using " << NUM_THREADS << " thread(s): ";
 
         // Si no es una carpeta
 
         if (!fs::is_directory(argv[0]))
         {
+
             if (!validateFile(argv[0]))
             {
 
-                cout << "Unable to find file " << argv[0] << endl
+                cout << endl
+                     << "Unable to find file " << argv[0] << endl
                      << "Terminating..." << endl;
                 return 1;
             }
+
+            cout << argv[0] << endl
+                 << endl;
 
             outputFile(argv[0]);
         }
         else
         {
-            vector<string> files;
             vector<thread> threads;
 
-            for (const auto &entry : fs::directory_iterator(argv[0]))
+            cout << argv[0] << endl
+                 << endl;
+
+            for (vector<fs::path> &chunk : divideEvenly(getListOfFiles(argv[0]), NUM_THREADS))
             {
-                if (validateFile(entry.path().c_str()))
-                {
-                    files.push_back(entry.path().string());
-                }
-                else
-                {
-                    cout << "Could not open file: " << entry.path() << endl;
-                }
+                threads.push_back(thread(outputChunk, chunk));
             }
-
-            vector<vector<string>> test = divideEvenly(files, NUM_THREADS);
-
-            for (int i = 0; i < NUM_THREADS; i++)
-            {
-                threads.push_back(thread(outputChunk, ref(test[i])));
-            }
-
-            // for (auto chunk : test)
-            // {
-            //     threads.push_back(thread(outputChunk, chunk));
-            // }
 
             for (auto &th : threads)
             {
@@ -285,6 +294,4 @@ int main(int argc, char const *argv[])
 
     cout << "Done!" << endl
          << "Finished in " << duration.count() << " milliseconds." << endl;
-
-    //  std::string path = "/path/to/directory";
 }

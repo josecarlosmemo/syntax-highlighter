@@ -1,2 +1,6 @@
 output/
 .vscode/
+Lexer.cpp
+syntax-highlighter
+README-JCMN.md
+README-JCMN.pdf
