@@ -29,9 +29,7 @@ C++.
 ### Built With
 
 <div>
-cpp
-mysql
-arduino
+<img src="https://skillicons.dev/icons?i=cpp"/>
 </div>
 
 <p align="right">(<a href="#top">back to top</a>)</p>
