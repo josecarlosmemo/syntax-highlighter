@@ -235,21 +235,16 @@ $$S_p = \frac{T_1}{T_p}$$
 
 Where:
 
--   *p* is the number of processors (or cores)
--   *T*<sub>1</sub> is the time taken to execute the single processor
-    version of the program
--   *T*<sub>*p*</sub> is the time taken to execute the multi-processor
-    version of the program using *p* processors
--   Lastly, *S*<sub>*p*</sub> is the SpeedUp obtained by using *p*
-    processors.
+- $p$ is the number of processors (or cores)
+- $T_1$ is the time taken to execute the single processor version of the program
+- $T_p$ is the time taken to execute the multi-processor version of the program using $p$ processors
+- Lastly, $S_p$ is the SpeedUp obtained by using $p$ processors.
 
-Using the above formula we can calculate the **SpeedUp** using a total
-of *8 threads*.
+Using the above formula we can calculate the **SpeedUp** using a total of _8 threads_.
 
 $$S_p = \frac{9313 \text{ms}}{4634 \text{ms}}\approx 2 $$
 
-We can conclude that by using *8 threads* we practically **doubled** the
-speed of our program.
+We can conclude that by using _8 threads_ we practically **doubled** the speed of our program.
 
 ## Ethical Implications that this type of technology could have on society
 
