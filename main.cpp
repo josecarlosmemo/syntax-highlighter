@@ -4,8 +4,14 @@
 #include <fstream>
 #include <string>
 #include <chrono>
+#include <filesystem>
+#include <thread>
+#include <vector>
+
+#define NUM_THREADS 8
 
 using namespace std;
+namespace fs = std::filesystem;
 
 // Función que nos permite encodear caracteres especiales de HTML
 // Autor: Giovanni Funchal
@@ -41,36 +47,22 @@ void encode(std::string &data)
     data.swap(buffer);
 }
 
-int main(int argc, char const *argv[])
+void outputFile(fs::path fileName)
 {
-
+    // Iniciamos con el reloj
+    auto start = std::chrono::high_resolution_clock::now();
     yyFlexLexer *lexer;
-    string fileName;
     ifstream *input;
     ofstream output;
     ColorScheme scheme = Dracula;
+    input = new ifstream(fileName);
 
-    // Iniciamos con el reloj
-    auto start = std::chrono::high_resolution_clock::now();
+    fs::create_directories("output/" + fileName.parent_path().string());
 
-    // Revisamos input como argumento de main si no se ingresa, se marca el error y terminamos ejecución.
-
-    ++argv, --argc;
-    if (argc > 0)
-    {
-
-        input = new ifstream(argv[0]);
-        fileName = argv[0];
-    }
-    else
-    {
-        cout << "Missing File Argument" << endl
-             << "Terminating..." << endl;
-        return 1;
-    }
+    string outputFileName = "output/" + fileName.string() + ".html";
 
     // Creamos el archivo al cual escribir
-    output.open(strcat((char *)argv[0], ".html"));
+    output.open(outputFileName);
     // Inicializamos Lexer
     lexer = new yyFlexLexer(input);
 
@@ -165,10 +157,141 @@ int main(int argc, char const *argv[])
     // Paramos el reloj y terminamos el programa
 
     auto stop = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+
+    cout << "File: " << fileName << endl
+         << "Finished processing in " << duration.count() << " microseconds." << endl;
+}
+
+vector<vector<fs::path>> divideEvenly(vector<fs::path> lst, size_t n)
+{
+    vector<vector<fs::path>> results;
+    size_t chunk_size = lst.size() / n;
+    size_t remainder = lst.size() % n;
+
+    size_t begin = 0;
+    size_t end = 0;
+
+    for (size_t i = 0; i < min(n, lst.size()); i++)
+    {
+        end += (remainder > 0) ? (chunk_size + !!(remainder--)) : chunk_size;
+        results.push_back(vector<fs::path>(lst.begin() + begin, lst.begin() + end));
+        begin = end;
+    }
+
+    return results;
+}
+
+bool validateFile(const char *fileName)
+{
+
+    if (FILE *file = fopen(fileName, "r"))
+    {
+        fclose(file);
+
+        return true;
+    }
+    else
+    {
+
+        return false;
+    }
+}
+
+void outputChunk(vector<fs::path> files)
+{
+    if (files.size() >= 1)
+    {
+
+        for (fs::path file : files)
+        {
+            outputFile(file);
+        }
+    }
+}
+
+vector<fs::path> getListOfFiles(const fs::path &path)
+{
+    vector<fs::path> lst;
+    for (const auto &p : fs::recursive_directory_iterator(path))
+    {
+        if (!fs::is_directory(p))
+        {
+
+            if (validateFile(p.path().c_str()))
+            {
+                lst.push_back(p.path());
+            }
+            else
+            {
+                cout << endl
+                     << "Could not open file: " << p.path() << endl;
+            }
+        }
+    }
+    return lst;
+}
+
+int main(int argc, char const *argv[])
+{
+    argv[1] = "examples/";
+    argc = 2;
+    auto start = std::chrono::high_resolution_clock::now();
+
+    // Revisamos input como argumento de main si no se ingresa, se marca el error y terminamos ejecución.
+
+    ++argv, --argc;
+    if (argc > 0)
+    {
+        cout << "Processing using " << NUM_THREADS << " thread(s): ";
+
+        // Si no es una carpeta
+
+        if (!fs::is_directory(argv[0]))
+        {
+
+            if (!validateFile(argv[0]))
+            {
+
+                cout << endl
+                     << "Unable to find file " << argv[0] << endl
+                     << "Terminating..." << endl;
+                return 1;
+            }
+
+            cout << argv[0] << endl
+                 << endl;
+
+            outputFile(argv[0]);
+        }
+        else
+        {
+            vector<thread> threads;
+
+            cout << argv[0] << endl
+                 << endl;
+
+            for (vector<fs::path> &chunk : divideEvenly(getListOfFiles(argv[0]), NUM_THREADS))
+            {
+                threads.push_back(thread(outputChunk, chunk));
+            }
+
+            for (auto &th : threads)
+            {
+                th.join();
+            }
+        }
+    }
+    else
+    {
+        cout << "Missing File Argument" << endl
+             << "Terminating..." << endl;
+        return 1;
+    }
+
+    auto stop = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
 
     cout << "Done!" << endl
          << "Finished in " << duration.count() << " milliseconds." << endl;
-
-    return 0;
 }
