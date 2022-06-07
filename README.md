@@ -231,30 +231,22 @@ As seen in the image the total time taken to convert all files was
 
 The SpeedUp of a program is calculated by the following formula:
 
-![S_p = \frac{T_1}{T_p}](https://latex.codecogs.com/png.latex?\bg{white}\dpi{200}S_p%20%3D%20%5Cfrac%7BT_1%7D%7BT_p%7D "S_p = \frac{T_1}{T_p}")
+$$S_p = \frac{T_1}{T_p}$$
 
 Where:
 
-- ![p](https://latex.codecogs.com/png.latex?\bg{white}\dpi{200}p "p")
-    is the number of processors (or cores)
-- ![T_1](https://latex.codecogs.com/png.latex?\bg{white}\dpi{200}T_1 "T_1")
-    is the time taken to execute the single processor version of the
-    program
-- ![T_p](https://latex.codecogs.com/png.latex?\bg{white}\dpi{200}T_p "T_p")
-    is the time taken to execute the multi-processor version of the
-    program using
-    ![p](https://latex.codecogs.com/png.latex?\bg{white}\dpi{200}p "p")
-    processors
-- Lastly,
-    ![S_p](https://latex.codecogs.com/png.latex?\bg{white}\dpi{200}S_p "S_p")
-    is the SpeedUp obtained by using
-    ![p](https://latex.codecogs.com/png.latex?\bg{white}\dpi{200}p "p")
+-   *p* is the number of processors (or cores)
+-   *T*<sub>1</sub> is the time taken to execute the single processor
+    version of the program
+-   *T*<sub>*p*</sub> is the time taken to execute the multi-processor
+    version of the program using *p* processors
+-   Lastly, *S*<sub>*p*</sub> is the SpeedUp obtained by using *p*
     processors.
 
 Using the above formula we can calculate the **SpeedUp** using a total
 of *8 threads*.
 
-![S_p = \frac{9313 \text{ms}}{4634 \text{ms}}\approx 2](https://latex.codecogs.com/png.latex?\bg{white}\dpi{200}S_p%20%3D%20%5Cfrac%7B9313%20%5Ctext%7Bms%7D%7D%7B4634%20%5Ctext%7Bms%7D%7D%5Capprox%202 "S_p = \frac{9313 \text{ms}}{4634 \text{ms}}\approx 2")
+$$S_p = \frac{9313 \text{ms}}{4634 \text{ms}}\approx 2 $$
 
 We can conclude that by using *8 threads* we practically **doubled** the
 speed of our program.
